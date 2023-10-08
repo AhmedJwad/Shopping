@@ -1,0 +1,31 @@
+﻿@model Shopping.Data.Entities.Category
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>Country</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <Partial name="_Category" />
+            <div class="form-group mt-2">
+                <input type="submit" value="Create" class="btn btn-outline-primary" />
+                <a asp-action="Index" class="btn btn-outline-success">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

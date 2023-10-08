@@ -1,68 +1,54 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
 using Shopping.Data.Entities;
+using System.Diagnostics.Metrics;
 
 namespace Shopping.Controllers
 {
-    public class CountriesController : Controller
+    public class CategoriesController : Controller
     {
-        private readonly DataContext _context;
+        private readonly DataContext _Context;
 
-        public CountriesController(DataContext context)
+        public CategoriesController(DataContext Context)
         {
-            _context = context;
+           _Context = Context;
         }
-
-        // GET: Countries
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult>Index()
         {
-            return View(await _context.Countries.ToListAsync());
-                         
+            return View(await _Context.Categories.ToListAsync());
         }
-
-        // GET: Countries/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null || _context.Countries == null)
+            if (id == null || _Context.Categories == null)
             {
                 return NotFound();
             }
 
-            var country = await _context.Countries
+            var category = await _Context.Categories
                 .FirstOrDefaultAsync(m => m.Id == id);
-            if (country == null)
+            if (category == null)
             {
                 return NotFound();
             }
 
-            return View(country);
+            return View(category);
         }
 
-        // GET: Countries/Create
         public IActionResult Create()
         {
             return View();
         }
-
-        // POST: Countries/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create( Country country)
+        public async Task<IActionResult> Create(Category category)
         {
-            if (ModelState.IsValid)
+            if(ModelState.IsValid)
             {
-                _context.Add(country);
+               
                 try
                 {
-                    await _context.SaveChangesAsync();
+                    _Context.Add(category);
+                    await _Context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateException dbUpdateException)
@@ -70,7 +56,7 @@ namespace Shopping.Controllers
 
                     if (dbUpdateException.InnerException.Message.Contains("duplicate"))
                     {
-                        ModelState.AddModelError(string.Empty, "There is already a category with the same name.");
+                        ModelState.AddModelError(string.Empty, "There is already a country with the same name.");
                     }
                     else
                     {
@@ -85,18 +71,16 @@ namespace Shopping.Controllers
 
 
             }
-            return View(country);
+            return View(category);
         }
-
-        // GET: Countries/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null || _context.Countries == null)
+            if (id == null || _Context.Categories == null)
             {
                 return NotFound();
             }
 
-            var country = await _context.Countries.FindAsync(id);
+            var country = await _Context.Categories.FindAsync(id);
             if (country == null)
             {
                 return NotFound();
@@ -104,12 +88,12 @@ namespace Shopping.Controllers
             return View(country);
         }
 
-       
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id,  Country country)
+        public async Task<IActionResult> Edit(int id, Category category)
         {
-            if (id != country.Id)
+            if (id != category.Id)
             {
                 return NotFound();
             }
@@ -118,8 +102,8 @@ namespace Shopping.Controllers
             {
                 try
                 {
-                    _context.Update(country);
-                    await _context.SaveChangesAsync();
+                   _Context.Update(category);
+                    await _Context.SaveChangesAsync();
                     return RedirectToAction(nameof(Index));
                 }
                 catch (DbUpdateException dbUpdateException)
@@ -127,7 +111,7 @@ namespace Shopping.Controllers
 
                     if (dbUpdateException.InnerException.Message.Contains("duplicate"))
                     {
-                        ModelState.AddModelError(string.Empty, "There is already a category with the same name.");
+                        ModelState.AddModelError(string.Empty, "There is already a country with the same name.");
                     }
                     else
                     {
@@ -142,25 +126,23 @@ namespace Shopping.Controllers
 
 
             }
-            return View(country);
+            return View(category);
         }
-
-       
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Countries == null)
+            if (id == null || _Context.Categories == null)
             {
                 return NotFound();
             }
 
-            var country = await _context.Countries
-                .FindAsync( id);
-            if (country == null)
+            var category = await _Context.Categories
+                .FindAsync(id);
+            if (category == null)
             {
                 return NotFound();
             }
 
-            return View(country);
+            return View(category);
         }
 
         // POST: Countries/Delete/5
@@ -168,23 +150,11 @@ namespace Shopping.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (_context.Countries == null)
-            {
-                return Problem("Entity set 'DataContext.Countries'  is null.");
-            }
-            var country = await _context.Countries.FindAsync(id);
-            if (country != null)
-            {
-                _context.Countries.Remove(country);
-            }
-            
-            await _context.SaveChangesAsync();
+           
+            Category category = await _Context.Categories.FindAsync(id);            
+           _Context.Categories.Remove(category);         
+            await _Context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
-        }
-
-        private bool CountryExists(int id)
-        {
-          return (_context.Countries?.Any(e => e.Id == id)).GetValueOrDefault();
         }
     }
 }
