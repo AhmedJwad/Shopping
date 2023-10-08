@@ -1,5 +1,7 @@
 ﻿@model Shopping.Data.Entities.Country
 
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" />
+
 <h4>Country</h4>
 <hr />
 <dl class="row">
@@ -8,5 +10,11 @@
     </dt>
     <dd class="col-sm-10">
         @Html.DisplayFor(model => model.Name)
+    </dd>
+    <dt class="col-sm-2">
+        @Html.DisplayNameFor(model => model.StatesNumber)
+    </dt>
+    <dd class="col-sm-10">
+        @Html.DisplayFor(model => model.StatesNumber)
     </dd>
 </dl>

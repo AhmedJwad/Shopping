@@ -2,18 +2,19 @@
 
 namespace Shopping.Data.Entities
 {
-    public class Country
+    public class State
     {
         public int Id { get; set; }
 
-        [Display(Name = "Country")]
+        [Display(Name = "State")]
         [MaxLength(100, ErrorMessage = "The field {0} must have a maximum of {1} characters.")]
         [Required(ErrorMessage = "The field {0} is required.")]
         public string Name { get; set; }
 
-        public ICollection<State> States { get; set; }
+        public Country country { get; set; }
 
-        [Display(Name = "States")]
-        public int StatesNumber =>States==null ? 0 : States.Count;
+        public ICollection<City> Cities { get; set; }
+
+        public int CitiesNumber => Cities == null ? 0 : Cities.Count;
     }
 }
