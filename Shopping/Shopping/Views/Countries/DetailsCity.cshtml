@@ -1,0 +1,20 @@
+﻿@model Shopping.Data.Entities.City
+
+@{
+    ViewData["Title"] = "Details City";
+}
+<link rel="stylesheet" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css" />
+<flash dismissable="true" />
+
+<h1>Details State</h1>
+
+<div>
+    <partial name="_CityDetails" />
+</div>
+
+<div>
+   
+    <a asp-action="EditCity" asp-route-id="@Model?.Id" class="btn btn-outline-warning">Edit City</a> |
+    <a asp-action="DetailsState" asp-route-id="@Model.state.Id" class="btn btn-outline-success">Back to List</a>
+</div>
+<hr />

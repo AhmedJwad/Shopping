@@ -1,7 +1,7 @@
-﻿@model Shopping.Data.Entities.Country
+﻿@model Shopping.Models.CityViewModel
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "EditCity";
 }
 
 <h1>Edit</h1>
@@ -10,14 +10,14 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Edit">
+        <form asp-action="EditCity">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="StateId" />
             <input type="hidden" asp-for="Id" />
-            <input type="hidden" asp-for="States"/>
-           <Partial name="_country"/>
+            <Partial name="_City" />
             <div class="form-group">
                 <input type="submit" value="Save" class="btn btn-outline-primary" />
-                <a asp-action="Index" class="btn btn-outline-success">Back to List</a>
+                <a asp-action="DetailsState" asp-route-id="@Model.StateId" class="btn btn-outline-success">Back to List</a>
             </div>
         </form>
     </div>
@@ -26,5 +26,7 @@
 
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
