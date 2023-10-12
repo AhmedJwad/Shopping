@@ -1,14 +1,18 @@
 ﻿using Shopping.Data.Entities;
+using Shopping.Enum;
+using Shopping.Helpers;
 
 namespace Shopping.Data
 {
     public class SeedDb
     {
         private readonly DataContext _context;
+        private readonly IUserHelper _userHelper;
 
-        public SeedDb(DataContext context)
+        public SeedDb(DataContext context, IUserHelper userHelper)
         {
             _context = context;
+            _userHelper = userHelper;
         }
 
         public async Task SeedAsync()
@@ -16,7 +20,37 @@ namespace Shopping.Data
             await _context.Database.EnsureCreatedAsync();
             await CheckCountriesAsync();
             await CheckCategoriesAsync();
+            await CheckRolesAsync();
+            await CheckUserAsync( "Ahmed", "Almershady", "Ahmednet380@gmail.com", "322 311 4620", "iraq babil", UserType.Admin);
 
+        }
+
+        private async Task<User> CheckUserAsync( string FirstName, string Lastname, string Email, string Phonenumber, string Address, UserType usertype)
+        {
+            User user = await _userHelper.GetUserAsync(Email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    FirstName=FirstName,
+                    LastName=Lastname,
+                    Email=Email,
+                    PhoneNumber=Phonenumber,
+                    Address=Address,
+                    City=_context.Cities.FirstOrDefault(),
+                    UserType=usertype,
+                };
+                await _userHelper.AddUserAsync(user, "123456");
+                await _userHelper.AddUsertoRoleAsync(user, usertype.ToString());
+
+            }
+            return user;
+        }
+
+        private async Task CheckRolesAsync()
+        {
+            await _userHelper.CheckRoleAsync(UserType.Admin.ToString());
+            await _userHelper.CheckRoleAsync(UserType.User.ToString());
         }
 
         private async Task  CheckCategoriesAsync()
