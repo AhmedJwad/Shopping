@@ -27,6 +27,7 @@ builder.Services.AddIdentity<User, IdentityRole>(cfg =>
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddTransient<SeedDb>();
 builder.Services.AddScoped<IUserHelper, UserHelper>();
+builder.Services.AddScoped<ICombosHelper, CombosHelper>();
 builder.Services.ConfigureApplicationCookie(options =>
 {
 	options.LoginPath = "/Account/NotAuthorized";
