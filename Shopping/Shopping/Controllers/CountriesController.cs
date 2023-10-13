@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ using Shopping.Models;
 
 namespace Shopping.Controllers
 {
+    [Authorize(Roles = "Admin")]
     public class CountriesController : Controller
     {
         private readonly DataContext _context;
@@ -21,8 +23,10 @@ namespace Shopping.Controllers
             _context = context;
         }
 
-        // GET: Countries
-        public async Task<IActionResult> Index()
+		
+
+		// GET: Countries
+		public async Task<IActionResult> Index()
         {
             return View(await _context.Countries.Include(x=>x.States).ToListAsync());
                          

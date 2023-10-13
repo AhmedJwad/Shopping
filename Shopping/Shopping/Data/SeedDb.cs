@@ -39,6 +39,7 @@ namespace Shopping.Data
                     Address=Address,
                     City=_context.Cities.FirstOrDefault(),
                     UserType=usertype,
+                    UserName=Email,
                 };
                 await _userHelper.AddUserAsync(user, "123456");
                 await _userHelper.AddUsertoRoleAsync(user, usertype.ToString());

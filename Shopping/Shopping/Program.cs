@@ -12,6 +12,7 @@ builder.Services.AddDbContext<DataContext>(o =>
 {
     o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+//TODO: make stronger password
 builder.Services.AddIdentity<User, IdentityRole>(cfg =>
 {
     cfg.User.RequireUniqueEmail = true;
@@ -20,11 +21,19 @@ builder.Services.AddIdentity<User, IdentityRole>(cfg =>
     cfg.Password.RequireLowercase = false;
     cfg.Password.RequireNonAlphanumeric = false;
     cfg.Password.RequireUppercase = false;
+    cfg.Password.RequiredLength = 6;
 }).AddEntityFrameworkStores<DataContext>();
 
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddTransient<SeedDb>();
 builder.Services.AddScoped<IUserHelper, UserHelper>();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+	options.LoginPath = "/Account/NotAuthorized";
+	options.AccessDeniedPath = "/Account/NotAuthorized";
+});
+
+
 WebApplication? app = builder.Build();
 SeedData(app);
 
@@ -48,7 +57,7 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
-
+app.UseStatusCodePagesWithReExecute("/error/{0}");
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
