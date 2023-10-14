@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
 using Shopping.Data.Entities;
+using Shopping.Migrations;
 using Shopping.Models;
 
 namespace Shopping.Helpers
@@ -25,6 +26,32 @@ namespace Shopping.Helpers
         {
           return await _userManager.CreateAsync(user , password);
         }
+
+        public async Task<User> AddUserAsync(AddUserViewModel model, string imageID)
+        {
+            User user = new User
+            {
+                Address = model.Address,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                Email = model.Username,
+                UserName = model.Username,
+                ImageId = imageID,
+                City = await _context.Cities.FindAsync(model.CityId),
+                UserType = model.UserType,
+                PhoneNumber = model.PhoneNumber,
+            };
+            IdentityResult result = await _userManager.CreateAsync(user, model.Password);
+            if (result != IdentityResult.Success)
+            {
+                return null;
+            }
+            User newuse = await GetUserAsync(model.Username);
+            await AddUsertoRoleAsync(newuse , user.UserType.ToString());
+            return newuse;
+        }
+
+       
 
         public async Task AddUsertoRoleAsync(User user, string roleName)
         {

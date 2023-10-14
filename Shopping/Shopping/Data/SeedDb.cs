@@ -21,11 +21,12 @@ namespace Shopping.Data
             await CheckCountriesAsync();
             await CheckCategoriesAsync();
             await CheckRolesAsync();
-            await CheckUserAsync( "Ahmed", "Almershady", "Ahmednet380@gmail.com", "322 311 4620", "iraq babil", UserType.Admin);
+            await CheckUserAsync( "Ahmed", "Almershady", "Ahmednet380@gmail.com", "322 311 4620", "iraq babil", "bob.jpg", UserType.Admin);
 
         }
 
-        private async Task<User> CheckUserAsync( string FirstName, string Lastname, string Email, string Phonenumber, string Address, UserType usertype)
+        private async Task<User> CheckUserAsync( string FirstName, string Lastname, string Email, string Phonenumber, string Address,
+            string imageID, UserType usertype)
         {
             User user = await _userHelper.GetUserAsync(Email);
             if (user == null)
@@ -40,6 +41,7 @@ namespace Shopping.Data
                     City=_context.Cities.FirstOrDefault(),
                     UserType=usertype,
                     UserName=Email,
+                    ImageId=imageID,
                 };
                 await _userHelper.AddUserAsync(user, "123456");
                 await _userHelper.AddUsertoRoleAsync(user, usertype.ToString());
