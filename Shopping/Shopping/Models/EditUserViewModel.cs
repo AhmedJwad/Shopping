@@ -28,16 +28,16 @@ namespace Shopping.Models
         public string PhoneNumber { get; set; }
 
         [Display(Name = "Photo")]
-        public Guid ImageId { get; set; }
+        public string ImageId { get; set; }
 
         //TODO: Pending to put the correct paths
         [Display(Name = "Photo")]
-        public string ImageFullPath => ImageId == Guid.Empty
+        public string ImageFullPath => ImageId == string.Empty
             ? $"https://localhost:7237/images/images.png"
-            : $"https://localhost:7237/users/{ImageId}";
+            : $"https://localhost:7237/{ImageId}";
 
         [Display(Name = "Image")]
-        public IFormFile ImageFile { get; set; }
+        public IFormFile? ImageFile { get; set; }
 
         [Display(Name = "Country")]
         [Range(1, int.MaxValue, ErrorMessage = "You must select a country.")]
