@@ -21,7 +21,7 @@ namespace Shopping.Data
             await CheckCountriesAsync();
             await CheckCategoriesAsync();
             await CheckRolesAsync();
-            await CheckUserAsync( "Ahmed", "Almershady", "Ahmednet380@gmail.com", "322 311 4620", "iraq babil", "bob.jpg", UserType.Admin);
+            await CheckUserAsync( "Ahmed", "Almershady", "Amm380@yahoo.com", "322 311 4620", "iraq babil", "bob.jpg", UserType.Admin);
 
         }
 
@@ -45,6 +45,8 @@ namespace Shopping.Data
                 };
                 await _userHelper.AddUserAsync(user, "123456");
                 await _userHelper.AddUsertoRoleAsync(user, usertype.ToString());
+                string token = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+                await _userHelper.ConfirmEmailAsync(user, token);
 
             }
             return user;

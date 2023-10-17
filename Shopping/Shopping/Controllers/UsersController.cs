@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Shopping.Common;
 using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Enum;
@@ -17,14 +18,16 @@ namespace Shopping.Controllers
         private readonly IUserHelper _userHelper;
         private readonly IBlobHelper _blobHelper;
         private readonly ICombosHelper _combosHelper;
+        private readonly IMailHelper _mailHelper;
 
         public UsersController(DataContext context , IUserHelper userHelper, IBlobHelper blobHelper , 
-            ICombosHelper combosHelper)
+            ICombosHelper combosHelper, IMailHelper mailHelper)
         {
             _context = context;
             _userHelper = userHelper;
             _blobHelper = blobHelper;
             _combosHelper = combosHelper;
+            _mailHelper = mailHelper;
         }
         public async Task<IActionResult> Index()
         {
@@ -65,7 +68,28 @@ namespace Shopping.Controllers
                     model.Cities = await _combosHelper.GetComboCitiesAsync(model.StateId);
                     return View(model);
                 }
-                return RedirectToAction(nameof(Index));
+                string myToken = await _userHelper.GenerateEmailConfirmationTokenAsync(user);
+                string tokenLink = Url.Action("ConfirmEmail", "Account", new
+                {
+                    userid = user.Id,
+                    token = myToken
+                }, protocol: HttpContext.Request.Scheme);
+
+                Response response = _mailHelper.SendMail(
+                    $"{model.FirstName} {model.LastName}",
+                    model.Username,
+                    "Shopping - Email Confirmation",
+                    $"<h1>Shopping - Email Confirmation</h1>" +
+                        $"To enable the user please click on the following link:, " +
+                        $"<p><a href = \"{tokenLink}\">Confirm Email</a></p>");
+                if (response.IsSuccess)
+                {
+                    ViewBag.Message = "Instructions to enable the user have been sent to the email.";
+                    return View(model);
+                }
+
+                ModelState.AddModelError(string.Empty, response.Message);
+
             }
             return View(model);
         }
