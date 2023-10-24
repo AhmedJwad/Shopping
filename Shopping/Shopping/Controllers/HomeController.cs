@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Helpers;
@@ -31,52 +32,153 @@ namespace Shopping.Controllers
         {
             List<Product> products = await _context.Products
                 .Include(x=>x.ProductCategories).Include(x=>x.ProductImages)
-                .OrderBy(x=>x.Description).ToListAsync();
-            List<ProductsHomeViewModel> productsHomes = new() { new ProductsHomeViewModel() };
-            int i = 1;
-            foreach (var product in products)
+                .OrderBy(x=>x.Description).ToListAsync();        
+
+
+            var cart = HttpContext.Session.GetString("cart");//get key cart
+            if (cart == null)
             {
-                if(i==1)
-                {
-                    productsHomes.LastOrDefault().Product1 = product;
-                }
-                if(i==2)
-                {
-                    productsHomes.LastOrDefault().Product2 = product;
-                }
-                if(i==3)
-                {
-                    productsHomes.LastOrDefault().Product3 = product;
-                }
-                if(i==4)
-                {
-                    productsHomes.LastOrDefault().Product4 = product;
-                    productsHomes.Add(new ProductsHomeViewModel() );
-                    i = 0;
-                }
-                i++;
+                HomeViewModel model1 = new() { Products = products };
+
+
+                return View(model1);
             }
-           
-            
-            
-            var cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
-            if(cart!=null)
+            List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+            if (cart != null)
+            {
+              
+                if (dataCart.Count > 0)
+                {
+                    ViewBag.carts = dataCart;
+                   
+                }
+            }
+                if (cart!=null)
             {
                 ViewBag.cart = cart;
-                ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
+                //ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
             }
             float quantity = 0;
            
             if (cart != null)
             {
-                quantity = cart.Sum(ts => ts.Quantity);
+              
+
+                quantity = dataCart.Sum(ts => ts.Quantity);
             }
            
-            HomeViewModel model = new() { Products = productsHomes , Quantity=quantity};
+            HomeViewModel model = new() { Products = products, Quantity=quantity};
             
 
             return View(model);
 
+        }
+        public async Task<IActionResult> Details(int? Id)
+        {
+            if(Id==null)
+            {
+                return NotFound();
+            }
+
+            Product product = await _context.Products.Include(x => x.ProductImages)
+                .Include(x => x.ProductCategories).ThenInclude(x => x.Category)
+                .FirstOrDefaultAsync(x => x.Id == Id);
+            if (product == null) { return NotFound(); }
+            string categories = string.Empty;
+
+            foreach (ProductCategory? category  in product.ProductCategories)
+            {
+                categories += $"{category.Category.Name}";
+
+            }
+            categories = categories.Substring(0, categories.Length - 2);
+            AddProductToCartViewModel model = new()
+            {
+                Categories = categories,
+                Description = product.Description,
+                Id = product.Id,
+                Name = product.Name,
+                Price = product.Price,
+                ProductImages = product.ProductImages,
+                Quantity = 1,
+                Stock = product.Stock,
+            };
+            return View(model);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Details(AddProductToCartViewModel model)
+        {
+            
+
+            Product product = await _context.Products.FindAsync(model.Id);
+            if (product == null)
+            {
+                return NotFound();
+            }
+            var cart = HttpContext.Session.GetString("cart");//get key cart
+            if (cart == null)
+            {
+                List<TemporalSale> Ahmed = new List<TemporalSale>()
+                {
+                    new TemporalSale
+                    {
+                    
+                    Product = product,
+                    Quantity = 1,
+                    }
+                    
+                };
+
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(Ahmed));
+            }
+            else
+            {
+                List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+                bool check = true;
+                for (int i = 0; i < dataCart.Count; i++)
+                {
+                    if (dataCart[i].Product.Id == model.Id)
+                    {
+                        dataCart[i].Quantity++;
+                        check = false;
+                    }
+                }
+                if (check)
+                {
+                    dataCart.Add(new TemporalSale
+                    {
+                        Product = product,
+                        Quantity = 1
+                    });
+                }
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
+
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+        public async Task<IActionResult> ShowCart()
+        {
+            var cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
+            if (cart != null)
+            {
+                ViewBag.cart = cart;
+                ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
+            }
+            float quantity = 0;
+
+            if (cart != null)
+            {
+                quantity = cart.Sum(ts => ts.Quantity);
+            }
+            ShowCartViewModel model = new()
+            {
+              
+                TemporalSales = cart,
+            };
+
+            return View(model);
         }
 
         public IActionResult Privacy()
@@ -113,18 +215,15 @@ namespace Shopping.Controllers
             {
                 return NotFound();
             }
-            string userIdentifier = Guid.NewGuid().ToString();
 
-          
+
+
 
             if (SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart") == null)
             {
                 List<TemporalSale> cart = new List<TemporalSale>();
                 cart.Add(new TemporalSale { Product = product, Quantity = 1, });
                 SessionHelper.SetObjectAsJson(HttpContext.Session, "cart", cart);
-
-
-
             }
             else
             {
@@ -135,9 +234,6 @@ namespace Shopping.Controllers
                 {
                     cart[index].Quantity++;
                 }
-
-
-
                 else
                 {
                     cart.Add(new TemporalSale { Product = product, Quantity = 1 });
@@ -154,15 +250,20 @@ namespace Shopping.Controllers
       
         private int isExist(int? id)
         {
-            var Ahmed =  _context.TemporalSales.ToList();
-            for (int i = 0; i < Ahmed.Count; i++)
+            List<TemporalSale> cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
+
+            if (cart != null && id.HasValue)
             {
-                if (Ahmed[i].Product.Id.Equals(id))
+                for (int i = 0; i < cart.Count; i++)
                 {
-                    return i;
+                    if (cart[i].Product != null && cart[i].Product.Id == id)
+                    {
+                        return i; // Return the index of the existing item
+                    }
                 }
             }
-            return -1;
+
+            return -1; // Return -1 if the item doesn't exist in the cart or if the cart is empty
         }
         
     }
