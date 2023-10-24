@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
+using Shopping.Data.Entities;
 
 namespace Shopping.Helpers
 {
@@ -24,6 +25,29 @@ namespace Shopping.Helpers
              Text= "{Select a category.}",
              Value="0",
             });
+            return list;
+        }
+
+        public async Task<IEnumerable<SelectListItem>> GetComboCategoriesAsync(IEnumerable<Category> filter)
+        {
+           List<Category> categories=await _context.Categories.ToListAsync();
+            List<Category> categoryfiltered = new();
+            foreach (Category category in categories)
+            {
+                if(!filter.Any(c=>c.Id == category.Id))
+                {
+                    categoryfiltered.Add(category);
+                }
+            }
+            List<SelectListItem> list = categoryfiltered.Select(c => new SelectListItem
+            {
+                Text = c.Name,
+                Value = c.Id.ToString()
+            })
+               .OrderBy(c => c.Text)
+               .ToList();
+
+            list.Insert(0, new SelectListItem { Text = "[Select a category...", Value = "0" });
             return list;
         }
 

@@ -9,7 +9,7 @@ namespace Shopping.Data.Entities
         public Product Product { get; set; }
 
         [Display(Name = "Photo")]
-        public string ImageId { get; set; }
+        public string ImageId { get; set; }       
 
         //TODO: Pending to change to the correct path
         [Display(Name = "Photo")]

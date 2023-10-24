@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
-using static NuGet.Packaging.PackagingConstants;
+
 
 namespace Shopping.Helpers
 {
@@ -15,16 +15,13 @@ namespace Shopping.Helpers
         }
         public async Task DeleteBlobAsync(string id, string containerName)
         {
-            //var image = _context.Images.FirstOrDefault(i => i.Id == id);
-            //if (recordToDelete != null)
-            //{
-            //    dbContext.Images.Remove(recordToDelete);
-            //    await dbContext.SaveChangesAsync();
-            //}
-            if (File.Exists(containerName))
+
+            if(File.Exists(id))
             {
-                File.Delete(containerName);
+                File.Delete(id);
             }
+            
+            
         }
 
         public async Task<string> UploadBlobAsync(IFormFile file, string containerName)
