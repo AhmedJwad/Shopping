@@ -19,7 +19,7 @@ namespace Shopping.Models
 
         [DisplayFormat(DataFormatString = "{0:C2}")]
         [Display(Name = "Value")]
-        public decimal Value => TemporalSales == null ? 0 : TemporalSales.Sum(ts => ts.Product.Price);
+        public decimal Value => TemporalSales == null ? 0 : TemporalSales.Sum(ts => (int)(ts.Product.Price) * (int)(ts.Quantity));
 
     }
 }

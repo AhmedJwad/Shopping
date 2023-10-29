@@ -125,7 +125,7 @@ namespace Shopping.Controllers
                     {
                     
                     Product = product,
-                    Quantity = 1,
+                    Quantity = model.Quantity == 0 ? 1 : model.Quantity,
                     }
                     
                 };
@@ -140,7 +140,7 @@ namespace Shopping.Controllers
                 {
                     if (dataCart[i].Product.Id == model.Id)
                     {
-                        dataCart[i].Quantity++;
+                        dataCart[i].Quantity=model.Quantity;
                         check = false;
                     }
                 }
@@ -160,27 +160,122 @@ namespace Shopping.Controllers
         }
         public async Task<IActionResult> ShowCart()
         {
-            var cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
-            if (cart != null)
+            var cart = HttpContext.Session.GetString("cart");
+            if(cart !=null)
             {
-                ViewBag.cart = cart;
-                ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
-            }
-            float quantity = 0;
+                List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
 
-            if (cart != null)
-            {
-                quantity = cart.Sum(ts => ts.Quantity);
-            }
-            ShowCartViewModel model = new()
-            {
-              
-                TemporalSales = cart,
-            };
+                ShowCartViewModel model = new()
+                {
 
-            return View(model);
+                    TemporalSales = dataCart,
+                };
+                return View(model);
+            }
+            else
+            {
+                List<TemporalSale> list = new List<TemporalSale>();
+                ShowCartViewModel model = new()
+                {
+                   
+                    TemporalSales= list,
+                };
+                return View(model);
+            }      
+                     
         }
 
+        public async Task<IActionResult> DecreaseQuantity(int? Id)
+        {
+            if(Id== null)
+            {
+                return NotFound();
+            }
+
+          
+            var cart = HttpContext.Session.GetString("cart");
+            if(cart !=null)
+            {
+                List<TemporalSale> datacart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+               var temporalSales = await _context.TemporalSales.ToListAsync();
+
+
+                if (datacart.Count > 0)
+                {
+
+                    foreach (var item2 in datacart)
+                    {
+
+                        if (item2.Product.Id == Id)
+                        {
+                            if(item2.Quantity>0)
+                            {
+                                item2.Quantity--;
+                            }                           
+                        }
+                        
+                    }
+
+
+                }
+
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(datacart));
+                var cart2 = HttpContext.Session.GetString("cart");
+            }
+            return RedirectToAction(nameof(ShowCart));
+
+        }
+        public async Task<IActionResult> IncreaseQuantity(int? Id)
+        {
+            if (Id == null)
+            {
+                return NotFound();
+            }
+
+            var cart = HttpContext.Session.GetString("cart");
+            if (cart != null)
+            {
+                List<TemporalSale> datacart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+
+                foreach (TemporalSale item in datacart)
+                {
+                  
+                        if (item.Product.Id == Id)
+                        {
+                            item.Quantity++;
+                        }
+                   
+
+                }
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(datacart));
+
+                var cart2 = HttpContext.Session.GetString("cart");
+            }
+            return RedirectToAction(nameof(ShowCart));
+
+        }
+        public async Task<IActionResult>Delete(int? Id)
+        {
+            if(Id==null)
+            {
+                return NotFound();
+            }
+
+            var cart = HttpContext.Session.GetString("cart");
+            if(cart != null)
+            {
+                List<TemporalSale> datacart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+                for (int i = 0; i < datacart.Count; i++)
+                {
+                    if (datacart[i].Product.Id == Id)
+                    {
+                        datacart.RemoveAt(i);
+                    }
+                }
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(datacart));
+            }
+            return RedirectToAction(nameof(ShowCart));
+        }
         public IActionResult Privacy()
         {
             return View();
@@ -216,55 +311,53 @@ namespace Shopping.Controllers
                 return NotFound();
             }
 
-
-
-
-            if (SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart") == null)
+            var cart = HttpContext.Session.GetString("cart");//get key cart
+            if (cart == null)
             {
-                List<TemporalSale> cart = new List<TemporalSale>();
-                cart.Add(new TemporalSale { Product = product, Quantity = 1, });
-                SessionHelper.SetObjectAsJson(HttpContext.Session, "cart", cart);
+                List<TemporalSale> Ahmed = new List<TemporalSale>()
+                {
+                    new TemporalSale
+                    {
+
+                    Product = product,
+                    Quantity = 1,
+                    }
+
+                };
+
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(Ahmed));
             }
             else
             {
-                List<TemporalSale> cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
-
-                int index = isExist(id);
-                if (index != -1)
+                List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+                bool check = true;
+                for (int i = 0; i < dataCart.Count; i++)
                 {
-                    cart[index].Quantity++;
+                    if (dataCart[i].Product.Id == product.Id)
+                    {
+                        dataCart[i].Quantity++;
+                        check = false;
+                    }
                 }
-                else
+                if (check)
                 {
-                    cart.Add(new TemporalSale { Product = product, Quantity = 1 });
+                    dataCart.Add(new TemporalSale
+                    {
+                        Product = product,
+                        Quantity = 1
+                    });
                 }
-                SessionHelper.SetObjectAsJson(HttpContext.Session, "cart", cart);
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
 
             }
-           
+
             return RedirectToAction(nameof(Index));
         }
 
         
 
       
-        private int isExist(int? id)
-        {
-            List<TemporalSale> cart = SessionHelper.GetObjectFromJson<List<TemporalSale>>(HttpContext.Session, "cart");
-
-            if (cart != null && id.HasValue)
-            {
-                for (int i = 0; i < cart.Count; i++)
-                {
-                    if (cart[i].Product != null && cart[i].Product.Id == id)
-                    {
-                        return i; // Return the index of the existing item
-                    }
-                }
-            }
-
-            return -1; // Return -1 if the item doesn't exist in the cart or if the cart is empty
-        }
+        
         
     }
 }
