@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json;
 using Shopping.Enum;
 using System.ComponentModel.DataAnnotations;
 
@@ -39,13 +40,14 @@ namespace Shopping.Data.Entities
         [Display(Name = "type of user")]
         public UserType UserType { get; set; }
 
+        [JsonIgnore]
         [Display(Name = "City")]
         public City City { get; set; }
 
         [Display(Name = "Full Name")]
         public string FullName => $"{FirstName} {LastName}";
+        public ICollection<Sale> Sales { get; set; }
 
-       
 
     }
 }

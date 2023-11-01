@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using Shopping.Common;
 using Shopping.Data;
 using Shopping.Data.Entities;
-using Shopping.Migrations;
+
 using System.Net.Http.Headers;
 
 namespace Shopping.Helpers

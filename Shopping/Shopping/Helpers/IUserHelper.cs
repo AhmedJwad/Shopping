@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Shopping.Data.Entities;
-using Shopping.Migrations;
 using Shopping.Models;
 
 namespace Shopping.Helpers

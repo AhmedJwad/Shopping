@@ -12,8 +12,8 @@ using Shopping.Data;
 namespace Shopping.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20231012081408_AddUserIdentity")]
-    partial class AddUserIdentity
+    [Migration("20231101184042_updatetemporalsale")]
+    partial class updatetemporalsale
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -192,7 +192,7 @@ namespace Shopping.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("stateId")
+                    b.Property<int?>("stateId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -226,6 +226,139 @@ namespace Shopping.Migrations
                     b.ToTable("Countries");
                 });
 
+            modelBuilder.Entity("Shopping.Data.Entities.Product", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<float>("Stock")
+                        .HasColumnType("real");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Products");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.ProductCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ProductId", "CategoryId")
+                        .IsUnique()
+                        .HasFilter("[ProductId] IS NOT NULL AND [CategoryId] IS NOT NULL");
+
+                    b.ToTable("ProductCategories");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.ProductImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ImageId")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("ProductImages");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.Sale", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("OrderStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Sales");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.SaleDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Quantity")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SaleId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SaleId");
+
+                    b.ToTable("SaleDetails");
+                });
+
             modelBuilder.Entity("Shopping.Data.Entities.State", b =>
                 {
                     b.Property<int>("Id")
@@ -239,7 +372,7 @@ namespace Shopping.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("countryId")
+                    b.Property<int?>("countryId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -250,6 +383,33 @@ namespace Shopping.Migrations
                     b.HasIndex("countryId");
 
                     b.ToTable("states");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.TemporalSale", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("DateCreated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<float>("Quantity")
+                        .HasColumnType("real");
+
+                    b.Property<string>("Remarks")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("TemporalSales");
                 });
 
             modelBuilder.Entity("Shopping.Data.Entities.User", b =>
@@ -265,7 +425,7 @@ namespace Shopping.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int>("CityId")
+                    b.Property<int?>("CityId")
                         .HasColumnType("int");
 
                     b.Property<string>("ConcurrencyStamp")
@@ -284,8 +444,8 @@ namespace Shopping.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<Guid>("ImageId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("ImageId")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -310,7 +470,9 @@ namespace Shopping.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("bit");
@@ -398,33 +560,89 @@ namespace Shopping.Migrations
                 {
                     b.HasOne("Shopping.Data.Entities.State", "state")
                         .WithMany("Cities")
-                        .HasForeignKey("stateId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("stateId");
 
                     b.Navigation("state");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.ProductCategory", b =>
+                {
+                    b.HasOne("Shopping.Data.Entities.Category", "Category")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("CategoryId");
+
+                    b.HasOne("Shopping.Data.Entities.Product", "Product")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.ProductImage", b =>
+                {
+                    b.HasOne("Shopping.Data.Entities.Product", "Product")
+                        .WithMany("ProductImages")
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.Sale", b =>
+                {
+                    b.HasOne("Shopping.Data.Entities.User", "User")
+                        .WithMany("Sales")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.SaleDetail", b =>
+                {
+                    b.HasOne("Shopping.Data.Entities.Product", "Product")
+                        .WithMany("SaleDetails")
+                        .HasForeignKey("ProductId");
+
+                    b.HasOne("Shopping.Data.Entities.Sale", "Sale")
+                        .WithMany("SaleDetails")
+                        .HasForeignKey("SaleId");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Sale");
                 });
 
             modelBuilder.Entity("Shopping.Data.Entities.State", b =>
                 {
                     b.HasOne("Shopping.Data.Entities.Country", "country")
                         .WithMany("States")
-                        .HasForeignKey("countryId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("countryId");
 
                     b.Navigation("country");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.TemporalSale", b =>
+                {
+                    b.HasOne("Shopping.Data.Entities.Product", "Product")
+                        .WithMany()
+                        .HasForeignKey("ProductId");
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Shopping.Data.Entities.User", b =>
                 {
                     b.HasOne("Shopping.Data.Entities.City", "City")
                         .WithMany("users")
-                        .HasForeignKey("CityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("CityId");
 
                     b.Navigation("City");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.Category", b =>
+                {
+                    b.Navigation("ProductCategories");
                 });
 
             modelBuilder.Entity("Shopping.Data.Entities.City", b =>
@@ -437,9 +655,28 @@ namespace Shopping.Migrations
                     b.Navigation("States");
                 });
 
+            modelBuilder.Entity("Shopping.Data.Entities.Product", b =>
+                {
+                    b.Navigation("ProductCategories");
+
+                    b.Navigation("ProductImages");
+
+                    b.Navigation("SaleDetails");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.Sale", b =>
+                {
+                    b.Navigation("SaleDetails");
+                });
+
             modelBuilder.Entity("Shopping.Data.Entities.State", b =>
                 {
                     b.Navigation("Cities");
+                });
+
+            modelBuilder.Entity("Shopping.Data.Entities.User", b =>
+                {
+                    b.Navigation("Sales");
                 });
 #pragma warning restore 612, 618
         }

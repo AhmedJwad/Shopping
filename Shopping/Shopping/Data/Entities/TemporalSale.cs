@@ -7,7 +7,8 @@ namespace Shopping.Data.Entities
         
         public int Id { get; set; }      
 
-        public Product Product { get; set; }
+        public Product Product { get; set; }      
+
 
         [DisplayFormat(DataFormatString = "{0:N2}")]
         [Display(Name = "Quantity")]
@@ -19,6 +20,10 @@ namespace Shopping.Data.Entities
         [DataType(DataType.MultilineText)]
         [Display(Name = "Comments")]
         public string? Remarks { get; set; }
+        [DisplayFormat(DataFormatString = "{0:C2}")]
+        [Display(Name = "Value")]
+        public decimal Value => Product == null ? 0 : (decimal)Quantity * Product.Price;
+
 
     }
 }

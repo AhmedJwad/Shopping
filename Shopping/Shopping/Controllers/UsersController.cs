@@ -6,7 +6,7 @@ using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Enum;
 using Shopping.Helpers;
-using Shopping.Migrations;
+
 using Shopping.Models;
 
 namespace Shopping.Controllers

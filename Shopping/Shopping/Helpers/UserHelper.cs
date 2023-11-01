@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
 using Shopping.Data.Entities;
-using Shopping.Migrations;
+
 using Shopping.Models;
 
 namespace Shopping.Helpers

@@ -1,14 +1,17 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Azure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using Shopping.Common;
 using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Helpers;
-using Shopping.Migrations;
 using Shopping.Models;
 using System.Diagnostics;
+using Response = Shopping.Common.Response;
 
 namespace Shopping.Controllers
 {
@@ -16,23 +19,26 @@ namespace Shopping.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private readonly DataContext _context;
-       
+        private readonly IUserHelper _userHelper;
+        private readonly IOrdersHelper _ordersHelper;
 
         public string ShoppingCartId { get; set; }
         public const string CartSessionKey = "CartId";
 
-        public HomeController(ILogger<HomeController> logger, DataContext context )
+        public HomeController(ILogger<HomeController> logger, DataContext context , IUserHelper userHelper ,
+            IOrdersHelper ordersHelper )
         {
             _logger = logger;
             _context = context;
-          
+           _userHelper = userHelper;
+            _ordersHelper = ordersHelper;
         }
 
         public async Task<IActionResult> Index()
         {
             List<Product> products = await _context.Products
-                .Include(x=>x.ProductCategories).Include(x=>x.ProductImages)
-                .OrderBy(x=>x.Description).ToListAsync();        
+                .Include(x=>x.ProductCategories).Include(x=>x.ProductImages).Where(p => p.Stock > 0)
+                .OrderBy(x=>x.Description).ToListAsync();
 
 
             var cart = HttpContext.Session.GetString("cart");//get key cart
@@ -46,29 +52,31 @@ namespace Shopping.Controllers
             List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
             if (cart != null)
             {
-              
+
                 if (dataCart.Count > 0)
                 {
                     ViewBag.carts = dataCart;
-                   
+
                 }
             }
-                if (cart!=null)
+            if (cart != null)
             {
                 ViewBag.cart = cart;
                 //ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
             }
             float quantity = 0;
-           
+
             if (cart != null)
             {
-              
+
 
                 quantity = dataCart.Sum(ts => ts.Quantity);
             }
+
+
+            HomeViewModel model = new() { Products = products,Quantity=quantity};
            
-            HomeViewModel model = new() { Products = products, Quantity=quantity};
-            
+
 
             return View(model);
 
@@ -129,12 +137,14 @@ namespace Shopping.Controllers
                     }
                     
                 };
+                
 
                 HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(Ahmed));
             }
             else
             {
                 List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+               
                 bool check = true;
                 for (int i = 0; i < dataCart.Count; i++)
                 {
@@ -152,6 +162,9 @@ namespace Shopping.Controllers
                         Quantity = 1
                     });
                 }
+
+              
+
                 HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
 
             }
@@ -160,6 +173,7 @@ namespace Shopping.Controllers
         }
         public async Task<IActionResult> ShowCart()
         {
+           
             var cart = HttpContext.Session.GetString("cart");
             if(cart !=null)
             {
@@ -183,6 +197,45 @@ namespace Shopping.Controllers
                 return View(model);
             }      
                      
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ShowCart(ShowCartViewModel model)
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            User user = await _userHelper.GetUserAsync(User.Identity.Name);
+            if (user == null) { return NotFound(); }
+
+
+            var cart = HttpContext.Session.GetString("cart");
+            if (cart != null)
+            {
+                List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+
+
+                model.TemporalSales = dataCart;
+                model.username = user.Email;
+
+
+                Response response = await _ordersHelper.ProcessOrderAsync(model);
+
+                if (response.IsSuccess)
+                {
+                    return RedirectToAction(nameof(OrderSuccess));
+                }
+
+                ModelState.AddModelError(string.Empty, response.Message);
+            }
+
+
+            return View(model);
+
+
+
         }
 
         public async Task<IActionResult> DecreaseQuantity(int? Id)
@@ -276,6 +329,13 @@ namespace Shopping.Controllers
             }
             return RedirectToAction(nameof(ShowCart));
         }
+
+        [Authorize]
+        public IActionResult OrderSuccess()
+        {
+            return View();
+        }
+
         public IActionResult Privacy()
         {
             return View();
@@ -294,7 +354,7 @@ namespace Shopping.Controllers
 		}
         public async Task<IActionResult> Add(int? id)
         {
-            
+
             if (id == null)
             {
                 return NotFound();
@@ -314,11 +374,12 @@ namespace Shopping.Controllers
             var cart = HttpContext.Session.GetString("cart");//get key cart
             if (cart == null)
             {
+
                 List<TemporalSale> Ahmed = new List<TemporalSale>()
                 {
                     new TemporalSale
                     {
-
+                    Id=product.Id + 20,
                     Product = product,
                     Quantity = 1,
                     }
@@ -329,35 +390,44 @@ namespace Shopping.Controllers
             }
             else
             {
+
                 List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
+                int nextId = dataCart.Count + 1;
                 bool check = true;
                 for (int i = 0; i < dataCart.Count; i++)
                 {
                     if (dataCart[i].Product.Id == product.Id)
                     {
+                        dataCart[i].Id = nextId + 20;
                         dataCart[i].Quantity++;
                         check = false;
                     }
+
                 }
                 if (check)
                 {
                     dataCart.Add(new TemporalSale
                     {
+                        Id = nextId + 20,
                         Product = product,
                         Quantity = 1
                     });
                 }
+
                 HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
 
             }
 
             return RedirectToAction(nameof(Index));
+
+
+
         }
 
-        
 
-      
-        
-        
+
+
+
+
     }
 }

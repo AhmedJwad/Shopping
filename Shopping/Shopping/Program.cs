@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Helpers;
@@ -12,6 +13,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<DataContext>(o =>
 {
     o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+   o.EnableSensitiveDataLogging();
 });
 //TODO: make stronger password
 builder.Services.AddIdentity<User, IdentityRole>(cfg =>
@@ -44,7 +46,9 @@ builder.Services.AddScoped<IUserHelper, UserHelper>();
 builder.Services.AddScoped<ICombosHelper, CombosHelper>();
 builder.Services.AddScoped<IBlobHelper, BlobHelper>();
 builder.Services.AddScoped<IMailHelper, MailHelper>();
+builder.Services.AddScoped<IOrdersHelper, OrdersHelper>();
 builder.Services.AddScoped(sp => sp.GetService<IHttpContextAccessor>().HttpContext.Session);
+
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
