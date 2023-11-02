@@ -222,13 +222,17 @@ namespace Shopping.Controllers
 
 
                 Response response = await _ordersHelper.ProcessOrderAsync(model);
-
+                dataCart.Clear();
+                
+                HttpContext.Session.SetString("cart", JsonConvert.SerializeObject(dataCart));
                 if (response.IsSuccess)
                 {
                     return RedirectToAction(nameof(OrderSuccess));
+                    
                 }
 
                 ModelState.AddModelError(string.Empty, response.Message);
+               
             }
 
 
@@ -379,7 +383,7 @@ namespace Shopping.Controllers
                 {
                     new TemporalSale
                     {
-                    Id=product.Id + 20,
+                    
                     Product = product,
                     Quantity = 1,
                     }
@@ -392,13 +396,13 @@ namespace Shopping.Controllers
             {
 
                 List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
-                int nextId = dataCart.Count + 1;
+            
                 bool check = true;
                 for (int i = 0; i < dataCart.Count; i++)
                 {
                     if (dataCart[i].Product.Id == product.Id)
                     {
-                        dataCart[i].Id = nextId + 20;
+                       
                         dataCart[i].Quantity++;
                         check = false;
                     }
@@ -408,7 +412,7 @@ namespace Shopping.Controllers
                 {
                     dataCart.Add(new TemporalSale
                     {
-                        Id = nextId + 20,
+                       
                         Product = product,
                         Quantity = 1
                     });
