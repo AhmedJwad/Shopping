@@ -19,6 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.Caching.SqlServer" Version="7.0.12" />
     <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="7.0.10" />
     <PackageReference Include="MimeKit" Version="4.2.0" />
+    <PackageReference Include="Vereyon.Web.FlashMessage" Version="3.0.0" />
   </ItemGroup>
 
   <ItemGroup>
