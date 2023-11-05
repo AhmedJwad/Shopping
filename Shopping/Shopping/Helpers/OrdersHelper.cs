@@ -20,6 +20,24 @@ namespace Shopping.Helpers
            _context = context;
            _userHelper = userHelper;
         }
+
+        public async Task<Response> CancelOrderAsync(int id)
+        {
+           Sale sale=await _context.Sales.Include(x=>x.SaleDetails)
+                .ThenInclude(x=>x.Product).FirstOrDefaultAsync(x=>x.Id==id);
+            foreach (SaleDetail item in sale.SaleDetails)
+            {
+                Product product = await _context.Products.FindAsync(item.Product.Id);
+                if (product != null)
+                {
+                    product.Stock += item.Quantity;
+                }
+            }
+            sale.OrderStatus = OrderStatus.Cancelled;
+            await _context.SaveChangesAsync();
+            return new Response { IsSuccess = true };
+        }
+
         public async Task<Response> ProcessOrderAsync(ShowCartViewModel model)
         {
             Response response = await CheckInventoryAsync(model);
