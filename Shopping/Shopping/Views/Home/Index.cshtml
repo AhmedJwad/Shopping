@@ -3,6 +3,30 @@
 @{
     ViewData["Title"] = "Index";
 }
+
+<div class="mb-2">
+    @foreach (var item in Model.Categories)
+    {
+        <span>@item.Name&nbsp;&nbsp;</span>
+    }
+</div>
+<flash dismissable="true" />
+<div class="mb-2">
+    <a asp-action="Index" asp-route-sortOrder="@ViewData["NameSortParm"]">Sort by Name</a>&nbsp;&nbsp;
+    <a asp-action="Index" asp-route-sortOrder="@ViewData["PriceSortParm"]">Sort by Price</a>
+</div>
+<form asp-action="Index" method="get">
+    <div class="form-actions no-color">
+        <p>
+            Search by name or category: <input type="text" name="SearchString" value="@ViewData["CurrentFilter"]" />
+            <input type="submit" value="Search" class="btn btn-warning" />
+            <a asp-action="Index" class="btn btn-success">See All Products</a>
+        </p>
+    </div>
+</form>
+
+
+
 @if (Model.Quantity > 0)
 {
     <a asp-action="ShowCart" class="btn btn-outline-primary">View Shopping Cart (@Model.Quantity)</a>
@@ -47,4 +71,25 @@
     {
         <h3>There are no products with your search criteria</h3>
     }
+</div>
+@{
+    var prevDisabled = !Model.Products.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.Products.HasNextPage ? "disabled" : "";
+}
+
+<div class="mt-5">
+    <a asp-action="Index"
+       asp-route-sortOrder="@ViewData["CurrentSort"]"
+       asp-route-pageNumber="@(Model.Products.PageIndex - 1)"
+       asp-route-currentFilter="@ViewData["CurrentFilter"]"
+       class="btn btn-warning @prevDisabled">
+        Previous
+    </a>
+    <a asp-action="Index"
+       asp-route-sortOrder="@ViewData["CurrentSort"]"
+       asp-route-pageNumber="@(Model.Products.PageIndex + 1)"
+       asp-route-currentFilter="@ViewData["CurrentFilter"]"
+       class="btn btn-success @nextDisabled">
+       Next
+    </a>
 </div>

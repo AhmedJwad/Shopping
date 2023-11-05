@@ -8,6 +8,7 @@ using Shopping.Data.Entities;
 using Shopping.Enum;
 using Shopping.Helpers;
 using Shopping.Models;
+using Vereyon.Web;
 
 namespace Shopping.Controllers
 {
@@ -18,15 +19,17 @@ namespace Shopping.Controllers
         private readonly ICombosHelper _combosHelper;
         private readonly IBlobHelper _blobHelper;
         private readonly IMailHelper _mailHelper;
+        private readonly IFlashMessage _flashMessage;
 
         public AccountController(DataContext context, IUserHelper userHelper, ICombosHelper combosHelper,
-            IBlobHelper blobHelper, IMailHelper mailHelper)
+            IBlobHelper blobHelper, IMailHelper mailHelper, IFlashMessage flashMessage)
         {
              _context = context;
             _userHelper = userHelper;
            _combosHelper = combosHelper;
             _blobHelper = blobHelper;
             _mailHelper = mailHelper;
+           _flashMessage = flashMessage;
         }
         public IActionResult Login()
         {
@@ -55,11 +58,13 @@ namespace Shopping.Controllers
 
                 if (result.IsLockedOut)
                 {
-                    ModelState.AddModelError(string.Empty, "You have exceeded the maximum number of attempts, your account is locked, try again in 5 minutes.");
+                    _flashMessage.Danger("You have exceeded the maximum number of attempts, your account is locked, try again in 5 minutes.");
+
                 }
                 else if (result.IsNotAllowed)
                 {
-                    ModelState.AddModelError(string.Empty, "The user has not been enabled, you must follow the instructions in the email sent to enable the user.");
+                    _flashMessage.Danger("The user has not been enabled, you must follow the instructions sent to the email to enable it.");
+                    ;
                 }
 
                 else
@@ -114,7 +119,7 @@ namespace Shopping.Controllers
 
                     if (user == null)
                     {
-                        ModelState.AddModelError(string.Empty, "This email is already being used.");
+                        _flashMessage.Danger("This email is already being used.");                        
                         model.Countries = await _combosHelper.GetComboCountriesAsync();
                         model.States = await _combosHelper.GetComboStatesAsync(model.CountryId);
                         model.Cities = await _combosHelper.GetComboCitiesAsync(model.StateId);
@@ -137,8 +142,9 @@ namespace Shopping.Controllers
                         $"<p><a href = \"{tokenLink}\">Confirm Email</a></p>");
                 if (response.IsSuccess)
                 {
-                    ViewBag.Message = "Instructions to enable the user have been sent to the email.";
-                    return View(model);
+                    _flashMessage.Info("Registered user. In order to enter the system, follow the instructions that have been sent to your email.");
+                    return RedirectToAction(nameof(Login));
+
                 }
 
                 ModelState.AddModelError(string.Empty, response.Message);
@@ -340,12 +346,14 @@ namespace Shopping.Controllers
                     model.Token, model.Password);
                 if(result.Succeeded)
                 {
-                    ViewBag.Message = "Password changed successfully.";
-                    return View();
+                    _flashMessage.Info("Password changed successfully.");
+                    return RedirectToAction(nameof(Login));
 
                 }
+                _flashMessage.Danger("Error changing password.");
+                return View(model);
             }
-            ViewBag.Message = "Error changing password.";
+            _flashMessage.Danger("User not found.");
             return View(model); 
 
         }

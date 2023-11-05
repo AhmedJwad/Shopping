@@ -11,6 +11,7 @@ using Shopping.Data.Entities;
 using Shopping.Helpers;
 using Shopping.Models;
 using System.Diagnostics;
+using System.Drawing.Printing;
 using Response = Shopping.Common.Response;
 
 namespace Shopping.Controllers
@@ -34,52 +35,90 @@ namespace Shopping.Controllers
             _ordersHelper = ordersHelper;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder, string currentFilter, string searchString, int? pageNumber)
         {
-            List<Product> products = await _context.Products
-                .Include(x=>x.ProductCategories).Include(x=>x.ProductImages).Where(p => p.Stock > 0)
-                .OrderBy(x=>x.Description).ToListAsync();
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["NameSortParm"] = String.IsNullOrEmpty(sortOrder) ? "NameDesc" : "";
+            ViewData["PriceSortParm"] = sortOrder == "Price" ? "PriceDesc" : "Price";
 
+            if (searchString != null)
+            {
+                pageNumber = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
+            ViewData["CurrentFilter"] = searchString;
+
+            IQueryable<Product> query = _context.Products
+               .Include(p => p.ProductImages)
+               .Include(p => p.ProductCategories)
+              .ThenInclude(x=>x.Category);
+            if (!string.IsNullOrEmpty(searchString))
+            {
+                query = query.Where(p => (p.Name.ToLower().Contains(searchString.ToLower()) ||
+                                            p.ProductCategories.Any(pc => pc.Category.Name.ToLower().Contains(searchString.ToLower()))) &&
+                                            p.Stock > 0);
+            }
+            else
+            {
+                query = query.Where(p => p.Stock > 0);
+            }
+
+            switch (sortOrder)
+            {
+                case "NameDesc":
+                    query = query.OrderByDescending(p => p.Name);
+                    break;
+                case "Price":
+                    query = query.OrderBy(p => p.Price);
+                    break;
+                case "PriceDesc":
+                    query = query.OrderByDescending(p => p.Price);
+                    break;
+                default:
+                    query = query.OrderBy(p => p.Name);
+                    break;
+            }
+
+            int pageSize = 10;
 
             var cart = HttpContext.Session.GetString("cart");//get key cart
             if (cart == null)
             {
-                HomeViewModel model1 = new() { Products = products };
-
+                HomeViewModel model1 = new()
+                {
+                    Products = await PaginatedList<Product>.CreateAsync(query, pageNumber ?? 1, pageSize),
+                    Categories = await _context.Categories.ToListAsync(),
+                };
 
                 return View(model1);
             }
             List<TemporalSale> dataCart = JsonConvert.DeserializeObject<List<TemporalSale>>(cart);
             if (cart != null)
             {
+                float quantity = 0;
 
-                if (dataCart.Count > 0)
+                if (cart != null)
                 {
-                    ViewBag.carts = dataCart;
-
+                    quantity = dataCart.Sum(ts => ts.Quantity);
                 }
+
+
+                HomeViewModel model = new()
+                {
+                    Products = await PaginatedList<Product>.CreateAsync(query, pageNumber ?? 1, pageSize),
+                    Categories = await _context.Categories.ToListAsync(),
+                    Quantity = quantity
+                };
+
+
+
+                return View(model);
             }
-            if (cart != null)
-            {
-                ViewBag.cart = cart;
-                //ViewBag.total = cart.Sum(item => (int)(item.Product.Price) * item.Quantity);
-            }
-            float quantity = 0;
-
-            if (cart != null)
-            {
-
-
-                quantity = dataCart.Sum(ts => ts.Quantity);
-            }
-
-
-            HomeViewModel model = new() { Products = products,Quantity=quantity};
-           
-
-
-            return View(model);
-
+            return View();
         }
         public async Task<IActionResult> Details(int? Id)
         {
