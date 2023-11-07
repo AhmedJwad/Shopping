@@ -9,7 +9,10 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Shopping.Data;
 using Shopping.Data.Entities;
+using Shopping.Helpers;
 using Shopping.Models;
+using Vereyon.Web;
+using static Shopping.Helpers.ModalHelper;
 
 namespace Shopping.Controllers
 {
@@ -17,10 +20,12 @@ namespace Shopping.Controllers
     public class CountriesController : Controller
     {
         private readonly DataContext _context;
+        private readonly IFlashMessage _flashMessage;
 
-        public CountriesController(DataContext context)
+        public CountriesController(DataContext context, IFlashMessage flashMessage)
         {
             _context = context;
+            _flashMessage = flashMessage;
         }
 
 		
@@ -28,7 +33,7 @@ namespace Shopping.Controllers
 		// GET: Countries
 		public async Task<IActionResult> Index()
         {
-            return View(await _context.Countries.Include(x=>x.States).ToListAsync());
+            return View(await _context.Countries.Include(x=>x.States).ThenInclude(x=>x.Cities).ToListAsync());
                          
         }
 
@@ -63,6 +68,7 @@ namespace Shopping.Controllers
             }
             return View(city);
         }
+        [NoDirectAccess]
         public async Task<IActionResult> AddCity(int? Id)
         {
             if (Id == null)
@@ -88,39 +94,41 @@ namespace Shopping.Controllers
         {
             if (ModelState.IsValid)
             {
+                State state = await _context.states.FindAsync(model.StateId);
+                City city = new()
+                {
+                    state = state,
+                    Name = model.Name
+                };
+                _context.Add(city);
                 try
                 {
-                    City city = new()
-                    {                       
-                       state = await _context.states.FindAsync(model.StateId),
-                        Name = model.Name,
-                    };
-                    _context.Add(city);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(DetailsState), new { Id = model.StateId });
+                    state = await _context.states
+                        .Include(s => s.Cities)
+                        .FirstOrDefaultAsync(c => c.Id == model.StateId);
+                    return Json(new { isValid = true, html = ModalHelper.RenderRazorViewToString(this, "_ViewAllCities", state) });
                 }
                 catch (DbUpdateException dbUpdateException)
                 {
-
                     if (dbUpdateException.InnerException.Message.Contains("duplicate"))
                     {
-                        ModelState.AddModelError(string.Empty, "There is already a State with the same name.");
+                        _flashMessage.Danger("There is already a city with the same name.");
                     }
                     else
                     {
-                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
+                        _flashMessage.Danger(dbUpdateException.InnerException.Message);
                     }
-;
                 }
                 catch (Exception exception)
                 {
-                    ModelState.AddModelError(string.Empty, exception.Message);
+                    _flashMessage.Danger(exception.Message);
                 }
-
-
             }
-            return View(model);
+
+            return Json(new { isValid = false, html = ModalHelper.RenderRazorViewToString(this, "CreateCity", model) });
         }
+        [NoDirectAccess]
         public async Task<IActionResult> EditCity(int? id)
         {
             if (id == null || _context.Cities == null)
@@ -163,7 +171,12 @@ namespace Shopping.Controllers
                     };
                     _context.Update(city);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(DetailsState), new { id = model.StateId });
+                    State state = await _context.states
+                .Include(s => s.Cities)
+                .FirstOrDefaultAsync(c => c.Id == model.StateId);
+                    _flashMessage.Confirmation("Registro actualizado.");
+                    return Json(new { isValid = true, html = ModalHelper.RenderRazorViewToString(this, "_ViewAllCities", state) });
+
                 }
                 catch (DbUpdateException dbUpdateException)
                 {
@@ -185,36 +198,35 @@ namespace Shopping.Controllers
 
 
             }
-            return View(model);
+            return Json(new { isValid = false, html = ModalHelper.RenderRazorViewToString(this, "EditCity", model) });
         }
         public async Task<IActionResult> DeleteCity(int? id)
         {
-            if (id == null || _context.Cities == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var city = await _context.Cities.Include(x => x.state)
-               .FirstOrDefaultAsync(x => x.Id == id);
+            City city = await _context.Cities
+                .Include(c => c.state)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (city == null)
             {
                 return NotFound();
             }
 
-            return View(city);
-        }
+            try
+            {
+                _context.Cities.Remove(city);
+                await _context.SaveChangesAsync();
+            }
+            catch
+            {
+                _flashMessage.Danger("The city cannot be deleted because it has related records.");
+            }
 
-        // POST: Countries/Delete/5
-        [HttpPost, ActionName("DeleteCity")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteCityConfirmed(int id)
-        {
-
-            var city = await _context.Cities.Include(x => x.state)
-                .FirstOrDefaultAsync(x => x.Id == id);
-            _context.Cities.Remove(city);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(DetailsState), new { id = city.state.Id });
+            _flashMessage.Info("Deleted City");
+            return RedirectToAction(nameof(DetailsState), new { Id = city.state.Id });
         }
 
         public async Task<IActionResult> DetailsState(int? Id)
@@ -231,7 +243,8 @@ namespace Shopping.Controllers
             }
             return View(state);
         }
-        public async Task <IActionResult> AddState(int? Id)
+        [NoDirectAccess]
+        public async Task <IActionResult> AddState(int Id)
         {
             if(Id == null)
             {
@@ -266,7 +279,13 @@ namespace Shopping.Controllers
                     };
                     _context.Add(state);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Details), new {Id= model.CountryId});
+                    Country country = await _context.Countries
+                    .Include(c => c.States)
+                    .ThenInclude(s => s.Cities)
+                    .FirstOrDefaultAsync(c => c.Id == model.CountryId);
+                    _flashMessage.Info("Added State");
+                    return Json(new { isValid = true, html = ModalHelper.RenderRazorViewToString(this, "_ViewAllStates", country) });
+
                 }
                 catch (DbUpdateException dbUpdateException)
                 {
@@ -288,8 +307,9 @@ namespace Shopping.Controllers
 
 
             }
-            return View(model);
+            return Json(new { isValid = false, html = ModalHelper.RenderRazorViewToString(this, "AddState", model) });
         }
+        [NoDirectAccess]
         public async Task<IActionResult> EditState(int? id)
         {
             if (id == null || _context.Countries == null)
@@ -331,8 +351,12 @@ namespace Shopping.Controllers
                         Name=model.Name,
                     };
                     _context.Update(state);
+                    Country country = await _context.Countries
+                    .Include(c => c.States)
+                    .ThenInclude(s => s.Cities)
+                    .FirstOrDefaultAsync(c => c.Id == model.CountryId);
                     await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Details), new {id=model.CountryId});
+                    return Json(new { isValid = true, html = ModalHelper.RenderRazorViewToString(this, "_ViewAllStates", country) });
                 }
                 catch (DbUpdateException dbUpdateException)
                 {
@@ -354,170 +378,141 @@ namespace Shopping.Controllers
 
 
             }
-            return View(model);
+            return Json(new { isValid = false, html = ModalHelper.RenderRazorViewToString(this, "EditState", model) });
         }
+
         public async Task<IActionResult> DeleteState(int? id)
         {
-            if (id == null || _context.states == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var state = await _context.states.Include(x => x.country)
-               .FirstOrDefaultAsync(x => x.Id == id);
+            State state = await _context.states
+                .Include(s => s.country)
+                .FirstOrDefaultAsync(s => s.Id == id);
             if (state == null)
             {
                 return NotFound();
             }
 
-            return View(state);
-        }
-
-        // POST: Countries/Delete/5
-        [HttpPost, ActionName("DeleteState")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteStateConfirmed(int id)
-        {
-
-            var state = await _context.states.Include(x=>x.country)
-                .FirstOrDefaultAsync(x=>x.Id==id);
-            _context.states.Remove(state);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Details), new {id=state.country.Id});
-        }
-
-        public IActionResult Create()
-        {
-            Country country = new() { States= new List<State>() };
-            return View(country);
-        }
-
-        
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create( Country country)
-        {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(country);
-                try
-                {
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateException dbUpdateException)
-                {
-
-                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
-                    {
-                        ModelState.AddModelError(string.Empty, "There is already a category with the same name.");
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
-                    }
-;
-                }
-                catch (Exception exception)
-                {
-                    ModelState.AddModelError(string.Empty, exception.Message);
-                }
-
-
+                _context.states.Remove(state);
+                await _context.SaveChangesAsync();
+                _flashMessage.Info("Deleted Item.");
             }
-            return View(country);
+            catch
+            {
+                _flashMessage.Danger("You cannot delete the state/department because it has related records.");
+            }
+
+            return RedirectToAction(nameof(Details), new { Id = state.country.Id });
         }
 
        
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null || _context.Countries == null)
-            {
-                return NotFound();
-            }
-
-            var country = await _context.Countries.Include(x=>x.States).FirstOrDefaultAsync(x=>x.Id==id);
-            if (country == null)
-            {
-                return NotFound();
-            }
-            return View(country);
-        }
-
-       
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id,  Country country)
-        {
-            if (id != country.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(country);
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateException dbUpdateException)
-                {
-
-                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
-                    {
-                        ModelState.AddModelError(string.Empty, "There is already a category with the same name.");
-                    }
-                    else
-                    {
-                        ModelState.AddModelError(string.Empty, dbUpdateException.InnerException.Message);
-                    }
-;
-                }
-                catch (Exception exception)
-                {
-                    ModelState.AddModelError(string.Empty, exception.Message);
-                }
+      
 
 
-            }
-            return View(country);
-        }
-
-       
+        [NoDirectAccess]
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null || _context.Countries == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
-            var country = await _context.Countries.Include(x => x.States)
-               .FirstOrDefaultAsync(x=>x.Id== id);
+            Country country = await _context.Countries.FirstOrDefaultAsync(c => c.Id == id);
             if (country == null)
             {
                 return NotFound();
             }
 
-            return View(country);
-        }
+            try
+            {
+                _context.Countries.Remove(country);
+                await _context.SaveChangesAsync();
+                _flashMessage.Info("Deleted Item");
+            }
+            catch
+            {
+                _flashMessage.Danger("The country cannot be deleted because it has related records.");
+            }
 
-        // POST: Countries/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-          
-            var country = await _context.Countries.FindAsync(id);           
-            _context.Countries.Remove(country);         
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool CountryExists(int id)
+        [NoDirectAccess]
+        public async Task<IActionResult> AddOrEdit(int id = 0)
         {
-          return (_context.Countries?.Any(e => e.Id == id)).GetValueOrDefault();
+            if (id == 0)
+            {
+                return View(new Country());
+            }
+            else
+            {
+                Country country = await _context.Countries.FindAsync(id);
+                if (country == null)
+                {
+                    return NotFound();
+                }
+
+                return View(country);
+            }
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddOrEdit(int id, Country country)
+        {
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    if (id == 0) //Insert
+                    {
+                        _context.Add(country);
+                        await _context.SaveChangesAsync();
+                        _flashMessage.Info("Added Country");
+                    }
+                    else //Update
+                    {
+                        _context.Update(country);
+                        await _context.SaveChangesAsync();
+                        _flashMessage.Info("Update Country.");
+                    }
+                    return Json(new
+                    {
+                        isValid = true,
+                        html = ModalHelper.RenderRazorViewToString(
+                            this,
+                            "_ViewAll",
+                            _context.Countries
+                                .Include(c => c.States)
+                                .ThenInclude(s => s.Cities)
+                                .ToList())
+                    });
+                }
+                catch (DbUpdateException dbUpdateException)
+                {
+                    if (dbUpdateException.InnerException.Message.Contains("duplicate"))
+                    {
+                        _flashMessage.Danger("Ya existe un país con el mismo nombre.");
+                    }
+                    else
+                    {
+                        _flashMessage.Danger(dbUpdateException.InnerException.Message);
+                    }
+                }
+                catch (Exception exception)
+                {
+                    _flashMessage.Danger(exception.Message);
+                }
+            }
+
+            return Json(new { isValid = false, html = ModalHelper.RenderRazorViewToString(this, "AddOrEdit", country) });
+        }
+
+
     }
 }

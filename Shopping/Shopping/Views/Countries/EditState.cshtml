@@ -1,29 +1,26 @@
 ﻿@model Shopping.Models.StateViewModel
 
 @{
-    ViewData["Title"] = "EditState";
+    ViewData["Title"] = "Estates";
+    Layout = null;
 }
+
 <flash dismissable="true" />
-<h1>Edit</h1>
 
-<h4>Country</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="EditState">
+<div class="container smfont">
+    <form asp-action="EditState" autocomplete="off" asp-route-id="@Model.Id" onsubmit="return jQueryAjaxPost(this);">
+        <div class="box-body">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="CountryId" />
             <input type="hidden" asp-for="Id" />
-            <Partial name="_State" />
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-outline-primary" />
-                <a asp-action="Details" asp-route-id="@Model.CountryId" class="btn btn-outline-success">Back to List</a>
-            </div>
-        </form>
-    </div>
+            <input type="hidden" asp-for="CountryId" />
+            <partial name="_State" />
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-sm btn-success"><i class="fa fa-save"></i> Save</button>
+            <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal"><i class="fa fa-ban"></i> Cancel</button>           
+        </div>
+    </form>
 </div>
-
-
 
 @section Scripts {
     @{
