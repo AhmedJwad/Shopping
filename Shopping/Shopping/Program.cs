@@ -1,10 +1,14 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Shopping.Data;
 using Shopping.Data.Entities;
 using Shopping.Helpers;
+using System.Text;
+using System.Text.Json.Serialization;
 using Vereyon.Web;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +38,7 @@ builder.Services.AddIdentity<User, IdentityRole>(cfg =>
 }).AddDefaultTokenProviders()
 .AddEntityFrameworkStores<DataContext>();
 
+
 builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
 builder.Services.AddSession(options =>
 {
@@ -51,6 +56,20 @@ builder.Services.AddScoped<IOrdersHelper, OrdersHelper>();
 builder.Services.AddFlashMessage();
 
 builder.Services.AddScoped(sp => sp.GetService<IHttpContextAccessor>().HttpContext.Session);
+
+builder.Services.AddControllers().AddJsonOptions(x =>
+                x.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(x => x.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = false,
+        ValidateAudience = false,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Tokens:Key"]!)),
+        ClockSkew = TimeSpan.Zero
+    });
+
 
 
 builder.Services.ConfigureApplicationCookie(options =>

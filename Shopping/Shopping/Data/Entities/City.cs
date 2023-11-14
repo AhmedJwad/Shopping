@@ -14,7 +14,7 @@ namespace Shopping.Data.Entities
 
         [JsonIgnore]
         public State state { get; set; }
-
+        [JsonIgnore]
         public ICollection<User>users { get; set; }
     }
 }

@@ -39,8 +39,8 @@ namespace Shopping.Data.Entities
 
         [Display(Name = "type of user")]
         public UserType UserType { get; set; }
-
         [JsonIgnore]
+      
         [Display(Name = "City")]
         public City City { get; set; }
 
