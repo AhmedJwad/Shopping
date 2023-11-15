@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Shopping.Data.Entities
 {
@@ -10,6 +11,7 @@ namespace Shopping.Data.Entities
         [DataType(DataType.MultilineText)]
         [Display(Name = "Remarks")]
         public string? Remarks { get; set; }
+        [JsonIgnore]
         public Product Product { get; set; }
 
         [DisplayFormat(DataFormatString = "{0:N2}")]

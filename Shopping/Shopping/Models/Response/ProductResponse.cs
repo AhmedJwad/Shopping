@@ -1,10 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using Shopping.Data.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
-namespace Shopping.Data.Entities
+namespace Shopping.Models.Response
 {
-    public class Product
+    public class ProductResponse
     {
         public int Id { get; set; }
 
@@ -27,14 +27,9 @@ namespace Shopping.Data.Entities
         [DisplayFormat(DataFormatString = "{0:N2}")]
         [Display(Name = "Inventory")]
         [Required(ErrorMessage = "The field {0} is required.")]
-        public float Stock { get; set; }
+        public float Stock { get; set; }      
 
-        public ICollection<ProductCategory> ProductCategories { get; set; }
-
-        [Display(Name = "Categories")]
-        public int CategoriesNumber => ProductCategories == null ? 0 : ProductCategories.Count;
-
-        public ICollection<ProductImage> ProductImages { get; set; }
+        public List<ProductImagesResponse> ProductImages { get; set; }
 
         [Display(Name = "Photos")]
         public int ImagesNumber => ProductImages == null ? 0 : ProductImages.Count;
@@ -44,8 +39,6 @@ namespace Shopping.Data.Entities
         public string ImageFullPath => ProductImages == null || ProductImages.Count == 0
             ? $"https://localhost:7237/images/images.png"
             : ProductImages.FirstOrDefault().ImageFullPath;
-        [JsonIgnore]
-        public ICollection<SaleDetail> SaleDetails { get; set; }
-
+      
     }
 }
